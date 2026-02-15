@@ -2,7 +2,7 @@
 
 **Author:** Randall C. Crawford
 
-This repository contains coursework completed for **ANA 600: Fundamentals of Analytics** at National University. The course focused on building a strong foundation in **statistical modeling, data analysis, and analytical reasoning**, with an emphasis on applying statistical methods to real-world data problems.
+This repository contains coursework completed for **ANA 600: Fundamentals of Analytics** at National University. The course focused on building a strong foundation in **statistical modeling, data analysis, and analytical reasoning**, with an emphasis on applying statistical methods to real-world data problems using R Studio.
 
 Over the duration of the course, the work involved:
 
