@@ -1,0 +1,281 @@
+---
+title: "ANA600 Final Exam"
+author: '{Randall Crawford}'
+date: "`r Sys.Date()`"
+output:
+  word_document: default
+  pdf_document: default
+---
+## INSTRUCTIONS 
+
+Perform basic exploratory data analysis (EDA) for the final exam. EDA consists of the procedures and concepts we have practiced throughout the course. You will be exploring your dataset, reviewing the variables, modeling an variable of interest, and interpreting results. Each section requires a complete paragraph explaining and interpreting the results within the R-Markdown above the code block required to analyze that section. All writing and code should be written as if presenting a report to your supervisor.
+  
+***
+***
+
+## PREPARATION (10 Points)
+*Import the required file to a new dataframe and load necessary libraries*
+
+```{r include=FALSE}
+#Set Working Directory & Load Data Set
+myDataLocation <- "C:\\Program Files\\R\\ANA 600\\R Data\\Final Exam"
+setwd(myDataLocation)
+ACS_data <- read.csv(file = "ACS.csv", header = TRUE)
+
+#Libraries Packages Loaded 
+library(knitr)
+library(dplyr) 
+library(ggplot2)
+library(ggformula)
+library(supernova)
+library(lsr)
+library(mosaic)
+```
+```{r setup, include=FALSE}
+#Set Up Knitr Chunk Functionality
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## INTRODUCTION AND RESEARCH QUESTION (5 Points)
+1. Introduce your purpose and scope, creating a story for the data generation process that might be responsible for the variation in income output variable.
+2. Describe the research question, which is to examine income based on the sex variable.
+
+{When considering the potential factors that influence an individual's income, it seems logical that many factors
+could contribute to it, and not just Sex. Although, recent focus on inequality in compensation between sexes may 
+drive this type of investigation. Per your request, it is my task to create a linear model that estimates income 
+by sex. In trying to better understand the relationship of the outcome variable Income, and the explanatory variable 
+Sex, a word equation should be put together to help generalize what we are after with creating a linear model.}
+
+                                   {Income = B0 + B1(Sex) + error}
+
+
+## QUESTION #1 (10 Points)
+1. Enter code to produce the structure of your dataframe.
+2. Recode the Sex variable to 0=Female, 1=Male.
+3. Produce a crosstab table of observations for the race and sex variables.
+4. View the top five records in the dataframe.
+5. Write one paragraph describing the structure of the data frame and interpreting the produced table
+
+{Regarding the structure of the dataset, there are 1000 observations and 10 variables. Age, Income, and HoursWk are quantitative          variables. Sex, Married, USCitizen, HealthInsurance, and Language are binary categorical variables.  Race and the recently added            Sex_str are string categorical variables. Regarding the tabled observations, there are 53.7% female and 46.3% male, and 76.1% are 
+of the white race.}
+
+```{r Question_01}
+#Enter code to produce the structure of your dataframe.
+str(ACS_data)
+```
+```{r}
+#Recode the Sex variable to 0=Female, 1=Male.
+ACS_data$Sex <- as.character(factor(ACS_data$Sex, levels = c(0,1), labels = c("Female", "Male")))
+str(ACS_data)
+```
+```{r}
+#Produce a crosstab table of observations for the race and sex variables.
+xtabs(~ Race + Sex, data=ACS_data)
+```
+```{r}
+#View the top five records in the dataframe.
+head(ACS_data, 5)
+```
+
+## QUESTION #2 (10 Points)
+1. Recode the income variable to value x 1,000
+2. Calculate the minimum, maximum, mean, median, IQR, and range for income
+3. Calculate the mean of income each for males and for females
+4. Write one paragraph explaining and interpreting the descriptive statistics
+
+{At least 25% or 250 of the observations have $0 income. This brings the mean and median incomes down considerably, which currently 
+reside at $22,785.13 and $13,000 respectively for 1000 observations. The maximum income is $563,000, which is far removed from the 
+vast majority of observations.  The $28,573.61 male mean income was $10,779.29 higher than the $17,794.32 female mean income.}
+
+```{r Question_02}
+#1. Recode the income variable to value x 1,000
+ACS_data$Income <- ACS_data$Income * 1000
+str(ACS_data)
+```
+```{r}
+#2. Calculate the minimum, maximum, mean, median, IQR, and range for income
+Income.stats = favstats(ACS_data$Income)
+Income.stats
+```
+```{r}
+minimum = Income.stats[1,1]
+cat("Minimum =", dollar(minimum), '\n')
+maximum = Income.stats[1,5]
+cat("Maximum =", dollar(maximum), '\n')
+mean = Income.stats[1,6]
+cat("Mean =", dollar(mean), '\n')
+median = Income.stats[1,3]
+cat("Median =", dollar(median), '\n')
+IQR = Income.stats[1,4] - Income.stats[1,2]
+cat("IQR =", dollar(IQR), '\n')
+range = Income.stats[1,5] - Income.stats[1,1]
+cat("Range =", dollar(range))
+```
+```{r}
+#3. Calculate the mean of income each for males and for females.
+Income_Sex.stats = favstats(Income ~ Sex, data = ACS_data)
+Income_Sex.stats
+```
+```{r}
+female_mean = Income_Sex.stats[1,7]
+cat("Female Mean Income =", dollar(female_mean), '\n')
+male_mean = Income_Sex.stats[2,7]
+cat("Male Mean Income =", dollar(male_mean), '\n')
+```
+## QUESTION 3 (10 Points)
+1. Create a new variable SexL such that Sex = 0 is "Female", Sex = 1 is "Male", and else is "Undefined" 
+2. Create an appropriate visualization for income and the new SexL variable
+3. Write one paragraph explaining and interpreting the visualization
+
+{The boxplot visualization for Income faceted by Sex reaffirms much of what was seen in our descriptive statistics.  Females(0)
+account for the majority of $0 income observations, though there are a notable amount of Males(1) in the same predicament. Each
+light blue IQR box with a dark blue median line rests on $0 income. Both sexes have a number of outliers depicted with dark blue 
+dots, mainly due to the shift of each income set toward $0 income. Males(1) seem to possess some higher income levels though.}
+
+```{r Question_03}
+#1. Create a new variable SexL such that Sex = 0 is "Female", Sex = 1 is "Male", and else is "Undefined".
+ACS_data$SexL <- as.integer(recode(ACS_data$Sex, "Female" = 0, "Male" = 1))
+str(ACS_data)
+```
+```{r}
+#2. Create an appropriate visualization for income and the new SexL variable.
+boxplot(Income ~ SexL, data = ACS_data, col = "lightblue", border = "darkblue", outpch = 21, outbg = "darkblue", linewidth = 0.25, main = "Income Boxplots Faceted By Sex", ylab="", xlab = "", yaxt = "n")
+axis(2, at = seq(0, 600000, 50000), las = 2, cex.axis=0.75)
+mtext("Sex Code", side=1, line=2, cex=1.2)
+mtext("Income", side=2, line=3.3, cex=1.2)
+```
+
+## QUESTION 4 (10 Points)
+1. Create a histogram of income by sex with facet grid
+2. Write one paragraph explaining and interpreting the visualization
+
+{Much of what was surmised in the boxplots can be seen in these histograms, especially the exceedingly large number of
+low income observations.  Both histograms are unimodal with an apex at the mode, $0 income, which is less than the median 
+that is in turn less than the mean, indicating a pronounce right skew. Some level of kurtosis is present with a significant 
+number of outliers, more so in the Male histogram. And again, males seem to possess some higher income levels.}
+
+```{r Question04}
+#1. Create a histogram of income by sex with facet grid
+gf_histogram(~ Income, data = ACS_data, fill = "green", color = "black", linewidth = 0.5, bins = 60, title = "Income Histograms with Boxplot Overlays", subtitle = "(Faceted by Sex)") %>%
+  gf_facet_grid(Sex ~ .) %>%
+  gf_boxplot(fill = "purple", width = 20, color = "black", linewidth = 0.75) + scale_x_continuous("Income", breaks = breaks_pretty(n=12)) 
+```
+## QUESTION 5 (10 Points)
+1. Create a model of income for females
+2. Write one paragraph explaining and interpreting the model
+
+{An empty model was created using income from a female filtered data set. Standard Equation Used: Y = b0 + e, with Y = 
+the estimated female income, b0 = $17,794 (the mean female income coefficient), and e = error.  After an ANOVA evaluation,
+the Sum of Squared Error was 4.1993e+11.  This value is large due to the range of income values in the data set and the 
+number of $0 income observations, but is the smallest possible outcome given that mean is being used.}
+
+```{r Question05}
+#1. Create a model of income for females.
+ACS_data_female <- filter(ACS_data, SexL == 0)
+str(ACS_data_female)
+```
+```{r}
+IncFem_model <- lm(Income ~ NULL, data = ACS_data_female)
+IncFem_model
+```
+```{r}
+anova(IncFem_model)
+```
+## QUESTION 6 (20 Points)
+1. Create a model of income by sex
+2. Write one paragraph explaining and interpreting the model
+
+{A linear model was created using income as an outcome variable and the binary SexL as an explanatory variable. Standard 
+Equation Used: Y = b0 + b1(X1) + e, with Y = the estimated income, b0 = $17,794 (the mean female income coefficient), 
+b1 = $10,779 (difference between the mean male income and the mean female income), X1 = 0 (representing a female income 
+observation) or 1 (representing a male income observation), and e = error.
+
+```{r Question06}
+IncSex_model <- lm(Income ~ SexL, data = ACS_data)
+IncSex_model
+```
+
+## QUESTION 7 (20 Points)
+1. Calculate the predicted value and residual value for each observation using the income by sex model
+2. Calculate the sum of squared deviations and sum of absolute deviations
+3. Write one paragraph explaining and interpreting the results
+
+{As expected, the prediction values are 17794.32, mean of female income, and 28573.61, mean of male income. Concerning 
+the residual values, the most common residuals were -17794.32 and -28573.61, given the number of $0 income observations. 
+The Sum of Squared Deviations calculation equaled 1.501666e+12, and the Sum of Absolute Deviations calculation equaled
+22270304.  These values are large due to the range of income values in the data set and the number of $0 income observations, 
+but are the smallest possible outcomes given that means are being used.}
+
+```{r Question_07}
+#1. Calculate the predicted value and residual value for each observation using the income by sex model.
+ACS_data$prediction <- predict(IncSex_model)
+ACS_data$prediction
+```
+
+```{r}
+ACS_data$residual <- resid(IncSex_model)
+ACS_data$residual
+```
+```{r}
+str(ACS_data)
+```
+```{r}
+#2. Calculate the sum of squared deviations and sum of absolute deviations.
+SSD = sum(ACS_data$residual ^ 2)
+cat("Sum of Squared Deviations(SSD) =", SSD, '\n')
+```
+```{r}
+SAD = sum(abs(ACS_data$residual))
+cat("Sum of Absolute Deviations Of Residuals(SAD) =", SAD, '\n')
+```
+
+## QUESTION 8 (20 Points)
+1. Run an analysis of variance on the model of income by sex
+2. Write one paragraph explaining and interpreting the results
+Hint:
+* H0: bi = 0
+* Ha: bi <> 0
+
+{The Sum of Squared Residuals matches my previous calculation.  The Sum of Squared SexL looks significantly less than
+the Sum of Squared Residuals. With a F-statistic value of 19.2, the null hypothesis H0 should be rejected in favor of 
+Ha.  With a p-value near 0, less than 0.001 in this case, the model is viewed as statistically significant.}
+
+```{r Question_08}
+Betelguese <- anova(IncSex_model)
+Betelguese
+```
+
+## QUESTION 9 (10 Points)
+1. Calculate the proportional reduction in error
+2. Write one paragraph explaining and interpreting the improvement of the linear model by adding sex
+Hint:
+* H0: bi = 0
+* Ha: bi <> 0
+
+{The Proportional Reduction In Error calculation indicates that 1.89% of the total error in the model has been reduced
+by adding Sex.  Ideally, one would want this value to be much higher, if you intended to use Sex only to estimate income.
+The Cohen's D value calculation equaled 0.278.  This value is closer to a small effect size(d~0.2) than a medium effect
+size(d~0.5), and indicates the size of group difference in standard deviation units.}
+
+```{r Question_09}
+PRE = Betelguese["SexL","Sum Sq"]/(Betelguese["SexL","Sum Sq"] + Betelguese["Residuals","Sum Sq"])
+cat("The Proprortional Reduction In Error(PRE) =", PRE)
+```
+```{r}
+CD = cohensD(Income ~ SexL, data = ACS_data)
+cat("The Cohen's D Value =", CD)
+```
+## QUESTION 10 (20 Points)
+Write one paragraph interpreting and concluding the results of your analysis.
+
+{Adding sex to the model to explain income was statistically significant.  Although, it only corrected a small of amount
+of error in it. Recommending two courses of possible actions to proceed with creating a better model to explain income: 
+One, if it is not necessary to estimate the income of those who are not earning anything, maybe $0 income observations 
+should be filtered from the data set. Two, there are 7 other variables in the data set that could be potentially added 
+to help explain income further.  Would be happy to pursue both of these recommendations.}
+
+{Special Note: Noticed that the Sum of Squared Deviations from the empty model used for female incomes only, 4.1993e+11, 
+was less than that of the Income by Sex model, 1.5017e+12. This difference can attributed to the larger standard deviation 
+associated with male incomes, and a higher mean income that produces a higher residual from the $0 income observations.}
+
+**END OF FINAL EXAM**
